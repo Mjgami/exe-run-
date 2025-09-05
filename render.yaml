@@ -1,14 +1,12 @@
 services:
   - type: web
-    name: wine-novnc-app
+    name: exe-vnc-server
     env: docker
     plan: free
-    disk:
-      name: appdata
-      mountPath: /root/app
-      sizeGB: 1
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
     envVars:
       - key: VNC_PASSWORD
-        value: "StrongPassword123"  # Change this
-    autoDeploy: true
-
+        value: StrongPassword123
+      - key: DISPLAY
+        value: ":0"
