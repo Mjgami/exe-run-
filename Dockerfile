@@ -1,34 +1,30 @@
-FROM ubuntu:22.04
+FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DISPLAY=:0
-ENV WINEDEBUG=-all
 
-# Enable 32-bit architecture and install Wine + required packages
-RUN dpkg --add-architecture i386 && apt-get update && apt-get install -y \
-    x11vnc xvfb fluxbox supervisor wget unzip \
-    novnc websockify \
-    wine64 wine32 winetricks \
-    && rm -rf /var/lib/apt/lists/*
+# Install core dependencies
+RUN apt-get update && apt-get install -y \
+    x11vnc xvfb fluxbox novnc websockify wget curl supervisor \
+    wine-stable software-properties-common \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Create working directory
-WORKDIR /root
-
-# Copy files
-COPY app/ /root/app/
-COPY start.sh /start.sh
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-RUN chmod +x /start.sh
-
-# Configure noVNC web files
+# Configure VNC password
 RUN mkdir -p /root/.vnc && \
-    mkdir -p /root/novnc && \
-    cp -r /usr/share/novnc/* /root/novnc/
+    x11vnc -storepasswd StrongPassword123 /root/.vnc/passwd
 
-# Expose VNC and noVNC ports
-EXPOSE 8080
-EXPOSE 5900
+# Copy your EXE into the container
+COPY myapp.exe /root/myapp.exe
 
-# Start everything using Supervisor
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Copy startup script
+COPY start.sh /root/start.sh
+RUN chmod +x /root/start.sh
+
+# Copy auto-redirect HTML
+COPY index.html /usr/share/novnc/index.html
+
+# Expose noVNC port
+EXPOSE 6080
+
+# Start everything
+CMD ["/root/start.sh"]
