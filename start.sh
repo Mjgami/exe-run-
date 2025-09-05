@@ -1,26 +1,32 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+set -e
 
+# Default VNC password if not provided
+VNC_PASSWD=${VNC_PASSWORD:-"changeme123"}
 
-# Ensure VNC password is set
-if [ -z "${VNC_PASSWORD:-}" ]; then
-echo "VNC_PASSWORD env var not set. Set it in Render dashboard."
-exit 1
-fi
+echo ">>> Starting virtual framebuffer (Xvfb)..."
+Xvfb :0 -screen 0 1366x768x16 &
 
+sleep 2
 
-# Prepare a clean X display
-export DISPLAY=${DISPLAY:-:0}
-export GEOMETRY=${GEOMETRY:-1366x768x24}
+echo ">>> Setting VNC password..."
+mkdir -p ~/.vnc
+x11vnc -storepasswd $VNC_PASSWD ~/.vnc/passwd
 
+echo ">>> Starting Fluxbox window manager..."
+fluxbox &
 
-# Create Wine prefix (isolated Windows environment)
-export WINEPREFIX=/app/.wine
-if [ ! -d "$WINEPREFIX" ]; then
-echo "Initializing Wine prefix..."
-wineboot --init || true
-fi
+sleep 2
 
+echo ">>> Starting Wine application..."
+# Run your Windows application
+wine /root/app/myapp.exe &
 
-# Start everything under supervisord
-exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+sleep 3
+
+echo ">>> Starting noVNC WebSocket proxy..."
+websockify --web=/root/novnc 8080 localhost:5900 &
+
+echo ">>> All services started successfully!"
+wait
+
