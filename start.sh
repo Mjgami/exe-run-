@@ -1,32 +1,21 @@
 #!/bin/bash
-set -e
-
-# Default VNC password if not provided
-VNC_PASSWD=${VNC_PASSWORD:-"changeme123"}
-
-echo ">>> Starting virtual framebuffer (Xvfb)..."
-Xvfb :0 -screen 0 1366x768x16 &
+echo "Starting virtual display..."
+Xvfb :0 -screen 0 1024x768x16 &
 
 sleep 2
-
-echo ">>> Setting VNC password..."
-mkdir -p ~/.vnc
-x11vnc -storepasswd $VNC_PASSWD ~/.vnc/passwd
-
-echo ">>> Starting Fluxbox window manager..."
+echo "Starting window manager..."
 fluxbox &
 
 sleep 2
+echo "Starting VNC server..."
+x11vnc -display :0 -rfbauth /root/.vnc/passwd -forever -shared -rfbport 5900 &
 
-echo ">>> Starting Wine application..."
-# Run your Windows application
-wine /root/app/myapp.exe &
+sleep 2
+echo "Starting noVNC server..."
+websockify --web /usr/share/novnc --heartbeat=15 6080 localhost:5900 &
 
 sleep 3
+echo "Launching EXE with Wine..."
+wine /root/myapp.exe
 
-echo ">>> Starting noVNC WebSocket proxy..."
-websockify --web=/root/novnc 8080 localhost:5900 &
-
-echo ">>> All services started successfully!"
 wait
-
