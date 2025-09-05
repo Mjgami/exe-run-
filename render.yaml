@@ -1,0 +1,16 @@
+services:
+- type: web
+name: novnc-wine-app
+env: docker
+plan: starter # use a paid plan to stay 24/7; free will sleep
+region: frankfurt
+healthCheckPath: /
+envVars:
+- key: VNC_PASSWORD
+sync: false # set in dashboard
+- key: GEOMETRY
+value: 1366x768x24
+disk:
+name: data
+mountPath: /app
+sizeGB: 5
