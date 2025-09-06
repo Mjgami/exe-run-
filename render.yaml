@@ -1,10 +1,10 @@
 services:
   - type: web
-    name: exe-run
+    name: exe-vnc-server
     env: docker
     dockerfilePath: ./Dockerfile
-    plan: starter   # free will sleep; use 'starter' or above for 24/7
+    plan: starter   # use paid starter/pro for 24/7; free will sleep
     autoDeploy: true
     envVars:
       - key: VNC_PASSWORD
-        value: "CHANGE_ME_TO_A_STRONG_PASSWORD"
+        value: "CHANGE_THIS_TO_A_STRONG_PASSWORD"
