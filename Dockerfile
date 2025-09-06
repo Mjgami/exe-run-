@@ -1,30 +1,37 @@
-FROM ubuntu:20.04
+# Use Ubuntu LTS
+FROM ubuntu:22.04
 
-ENV DEBIAN_FRONTEND=noninteractive
-ENV DISPLAY=:0
+ENV DEBIAN_FRONTEND=noninteractive \
+    DISPLAY=:0 \
+    TZ=Etc/UTC
 
-# Install core dependencies
-RUN apt-get update && apt-get install -y \
-    x11vnc xvfb fluxbox novnc websockify wget curl supervisor \
-    wine-stable software-properties-common \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Ensure i386 support & install dependencies (wine32+wine64, Xvfb, x11vnc, noVNC)
+RUN dpkg --add-architecture i386 && \
+    apt-get update && apt-get install -y --no-install-recommends \
+      apt-utils ca-certificates curl gnupg2 software-properties-common \
+      x11vnc xvfb fluxbox supervisor wget unzip git net-tools procps \
+      python3 python3-pip python3-setuptools \
+      websockify novnc \
+      wine64 wine32 winbind cabextract p7zip-full fonts-wqy-zenhei \
+      xterm \
+    && rm -rf /var/lib/apt/lists/*
 
-# Configure VNC password
-RUN mkdir -p /root/.vnc && \
-    x11vnc -storepasswd StrongPassword123 /root/.vnc/passwd
+# Make sure websockify (python) entrypoint exists
+RUN pip3 install --no-cache-dir websockify
 
-# Copy your EXE into the container
-COPY myapp.exe /root/myapp.exe
+# Create app directory and noVNC location
+WORKDIR /root
 
-# Copy startup script
+# Copy files (your exe, start scripts, and optional index.html)
+COPY ./app/ /root/app/
 COPY start.sh /root/start.sh
-RUN chmod +x /root/start.sh
-
-# Copy auto-redirect HTML
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY index.html /usr/share/novnc/index.html
 
-# Expose noVNC port
-EXPOSE 6080
+RUN chmod +x /root/start.sh
 
-# Start everything
-CMD ["/root/start.sh"]
+# Expose the port Render will route to via $PORT (Render assigns public port -> internal $PORT)
+# We don't hardcode a port here; websockify will read $PORT at runtime.
+EXPOSE 10000
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
