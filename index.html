@@ -1,10 +1,27 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
-    <meta http-equiv="refresh" content="0; url=/vnc.html" />
-    <title>Loading Virtual Desktop...</title>
+    <meta charset="utf-8"/>
+    <title>Launch VNC</title>
+    <script>
+      // Build an absolute URL to vnc.html and pass host/port query so client auto-connects
+      (function(){
+        // Render will serve this page on the public URL (with TLS)
+        // The WebSocket proxy endpoint is at the public PORT (Render maps)
+        // We set host to window.location.hostname and port to window.location.port or default 443/80
+        var host = window.location.hostname;
+        // Render will serve via HTTPS; noVNC uses secure WebSocket (wss) when page is https
+        var port = window.location.port || (location.protocol === 'https:' ? '443' : '80');
+        // Use query options to let vnc.html auto-fill: host=HOST&port=PORT&path= (websockify default path '')
+        // For websockify default path (root), vnc.html expects port (the WebSocket server).
+        var vncUrl = '/vnc.html?host=' + encodeURIComponent(host) + '&port=' + encodeURIComponent(port) + '&path=';
+        // Redirect after small delay so logs can be seen
+        window.location.replace(vncUrl);
+      })();
+    </script>
   </head>
   <body>
-    <p>Redirecting to your virtual desktop...</p>
+    <p>Redirecting to vnc client...</p>
+    <a href="/vnc.html">Click to open VNC client</a>
   </body>
 </html>
